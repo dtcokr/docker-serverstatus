@@ -14,10 +14,10 @@ USER = os.getenv('USER', 's01')
 # USER = "s01"
 
 
-PORT = os.getenv('PORT', 35601)
+PORT = int(os.getenv('PORT', 35601))
 PASSWORD = os.getenv('PASSWORD', 'USER_DEFAULT_PASSWORD')
-INTERVAL = os.getenv('INTERVAL', 1)
-PORBEPORT = os.getenv('PORBEPORT', 80)
+INTERVAL = int(os.getenv('INTERVAL', 1))
+PORBEPORT = int(os.getenv('PORBEPORT', 80))
 CU = os.getenv('CU', 'cu.tz.cloudcpp.com')
 CT = os.getenv('CT', 'ct.tz.cloudcpp.com')
 CM = os.getenv('CM', 'cm.tz.cloudcpp.com')
