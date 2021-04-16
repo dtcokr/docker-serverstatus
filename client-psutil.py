@@ -7,23 +7,32 @@
 # 时间： 20200407
 # 说明: 默认情况下修改server和user就可以了。丢包率监测方向可以自定义，例如：CU = "www.facebook.com"。
 
-SERVER = "127.0.0.1"
-USER = "s01"
+import os
+
+SERVER = os.getenv('SERVER', '127.0.0.1')
+USER = os.getenv('USER', 's01')
+# SERVER = "127.0.0.1"
+# USER = "s01"
 
 
-
-PORT = 35601
-PASSWORD = "USER_DEFAULT_PASSWORD"
-INTERVAL = 1
-PORBEPORT = 80
-CU = "cu.tz.cloudcpp.com"
-CT = "ct.tz.cloudcpp.com"
-CM = "cm.tz.cloudcpp.com"
+PORT = os.getenv('PORT', 35601)
+PASSWORD = os.getenv('PASSWORD', 'USER_DEFAULT_PASSWORD')
+INTERVAL = os.getenv('INTERVAL', 1)
+PORBEPORT = os.getenv('PORBEPORT', 80)
+CU = os.getenv('CU', 'cu.tz.cloudcpp.com')
+CT = os.getenv('CT', 'ct.tz.cloudcpp.com')
+CM = os.getenv('CM', 'cm.tz.cloudcpp.com')
+# PORT = 35601
+# PASSWORD = "USER_DEFAULT_PASSWORD"
+# INTERVAL = 1
+# PORBEPORT = 80
+# CU = "cu.tz.cloudcpp.com"
+# CT = "ct.tz.cloudcpp.com"
+# CM = "cm.tz.cloudcpp.com"
 
 import socket
 import time
 import timeit
-import os
 import json
 import psutil
 import sys
