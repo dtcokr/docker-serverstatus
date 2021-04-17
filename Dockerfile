@@ -1,7 +1,7 @@
 FROM debian:buster-slim
 
 RUN apt-get update
-RUN apt-get -y install python3 procps
+RUN apt-get -y install python3 procps iproute2
 RUN rm -rf /var/cache/apt
 RUN mkdir -p /ServerStatus/clients
 

@@ -15,6 +15,12 @@ Credit to: https://github.com/cppla/ServerStatus
 
 `docker run dtcokr/serverstatus:client python3 client-psutil.py`
 
+* if you have multiple disks/logical volumes on the host, mount them `readonly` to somewhere(i.e. `/mnt/extdisk`) in the docker container. Otherwise, total disk usage will be incomplete.
+
+let's say you have `/dev/sda1` on the host mounted on `/root` and `/dev/mapper/lv_user2` on the host mounted on `/home/user2`, you can do:
+
+`docker run -v /home/user2:/mnt/extdisk:ro dtcokr/serverstatus:client`
+
 ### Docker Envs
 
 **SERVER**      # default 127.0.0.1
