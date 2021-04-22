@@ -1,8 +1,6 @@
-FROM debian:buster-slim
+FROM alpine:3.13
 
-RUN apt-get update
-RUN apt-get -y install python3 procps iproute2
-RUN rm -rf /var/cache/apt
+RUN apk add --update --no-cache python3 coreutils iproute2 procps
 RUN mkdir -p /ServerStatus/clients
 
 COPY ./client-linux.py /ServerStatus/clients/client-linux.py
