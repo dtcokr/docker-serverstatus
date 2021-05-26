@@ -1,5 +1,6 @@
 # ServerStatus Client
 
+![Docker Image Size (tag)](https://img.shields.io/docker/image-size/dtcokr/serverstatus/client)
 ![Docker Pulls](https://img.shields.io/docker/pulls/dtcokr/serverstatus)
 ![GitHub last commit](https://img.shields.io/github/last-commit/dtcokr/docker-serverstatus)
 
