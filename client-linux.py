@@ -17,14 +17,18 @@ USER = os.getenv('USER', 's01')
 PORT = int(os.getenv('PORT', 35601))
 PASSWORD = os.getenv('PASSWORD', 'USER_DEFAULT_PASSWORD')
 INTERVAL = int(os.getenv('INTERVAL', 1))
-PORBEPORT = int(os.getenv('PORBEPORT', 80))
+PROBEPORT = int(os.getenv('PROBEPORT', 80))
+PROBE_PROTOCOL_PREFER = os.getenv('PROBE_PROTOCOL_PREFER', 'ipv4')  # ipv4, ipv6
+PING_PACKET_HISTORY_LEN = int(os.getenv('PING_PACKET_HISTORY_LEN', 100))
 CU = os.getenv('CU', 'cu.tz.cloudcpp.com')
 CT = os.getenv('CT', 'ct.tz.cloudcpp.com')
 CM = os.getenv('CM', 'cm.tz.cloudcpp.com')
 # PORT = 35601
 # PASSWORD = "USER_DEFAULT_PASSWORD"
 # INTERVAL = 1
-# PORBEPORT = 80
+# PROBEPORT = 80
+# PROBE_PROTOCOL_PREFER = "ipv4"  # ipv4, ipv6
+# PING_PACKET_HISTORY_LEN = 100
 # CU = "cu.tz.cloudcpp.com"
 # CT = "ct.tz.cloudcpp.com"
 # CM = "cm.tz.cloudcpp.com"
@@ -35,8 +39,13 @@ import timeit
 import re
 import sys
 import json
+import errno
 import subprocess
 import threading
+try:
+    from queue import Queue     # python3
+except ImportError:
+    from Queue import Queue     # python2
 
 def get_uptime():
     with open('/proc/uptime', 'r') as f:
@@ -125,7 +134,7 @@ def ip_status():
     ip_check = 0
     for i in [CU, CT, CM]:
         try:
-            socket.create_connection((i, PORBEPORT), timeout=1).close()
+            socket.create_connection((i, PROBEPORT), timeout=1).close()
         except:
             ip_check += 1
     if ip_check >= 2:
@@ -165,27 +174,38 @@ netSpeed = {
 
 def _ping_thread(host, mark, port):
     lostPacket = 0
-    allPacket = 0
-    startTime = time.time()
+    packet_queue = Queue(maxsize=PING_PACKET_HISTORY_LEN)
+
+    IP = host
+    if host.count(':') < 1:     # if not plain ipv6 address, means ipv4 address or hostname
+        try:
+            if PROBE_PROTOCOL_PREFER == 'ipv4':
+                IP = socket.getaddrinfo(host, None, socket.AF_INET)[0][4][0]
+            else:
+                IP = socket.getaddrinfo(host, None, socket.AF_INET6)[0][4][0]
+        except Exception:
+                pass
 
     while True:
+        if packet_queue.full():
+            if packet_queue.get() == 0:
+                lostPacket -= 1
         try:
             b = timeit.default_timer()
-            socket.create_connection((host, port), timeout=1).close()
-            pingTime[mark] = int((timeit.default_timer()-b)*1000)
-        except:
-            lostPacket += 1
-        finally:
-            allPacket += 1
+            socket.create_connection((IP, port), timeout=1).close()
+            pingTime[mark] = int((timeit.default_timer() - b) * 1000)
+            packet_queue.put(1)
+        except socket.error as error:
+            if error.errno == errno.ECONNREFUSED:
+                pingTime[mark] = int((timeit.default_timer() - b) * 1000)
+                packet_queue.put(1)
+            #elif error.errno == errno.ETIMEDOUT:
+            else:
+                lostPacket += 1
+                packet_queue.put(0)
 
-        if allPacket > 100:
-            lostRate[mark] = float(lostPacket) / allPacket
-
-        endTime = time.time()
-        if endTime - startTime > 3600:
-            lostPacket = 0
-            allPacket = 0
-            startTime = endTime
+        if packet_queue.qsize() > 30:
+            lostRate[mark] = float(lostPacket) / packet_queue.qsize()
 
         time.sleep(INTERVAL)
 
@@ -220,7 +240,7 @@ def get_realtime_date():
         kwargs={
             'host': CU,
             'mark': '10010',
-            'port': PORBEPORT
+            'port': PROBEPORT
         }
     )
     t2 = threading.Thread(
@@ -228,7 +248,7 @@ def get_realtime_date():
         kwargs={
             'host': CT,
             'mark': '189',
-            'port': PORBEPORT
+            'port': PROBEPORT
         }
     )
     t3 = threading.Thread(
@@ -236,7 +256,7 @@ def get_realtime_date():
         kwargs={
             'host': CM,
             'mark': '10086',
-            'port': PORBEPORT
+            'port': PROBEPORT
         }
     )
     t4 = threading.Thread(
