@@ -6,6 +6,16 @@
 
 **CREDIT**: https://github.com/cppla/ServerStatus
 
+Now supports: 
+- linux/arm64
+- linux/arm/v7
+- linux/arm/v6
+- linux/amd64
+- linux/386
+- linux/ppc64le
+- linux/s390x
+
+
 ## Usage
 
 use `host` network mode to monitor host network usage `--network=host` (**REQUIRED**)
