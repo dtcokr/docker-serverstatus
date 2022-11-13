@@ -1,4 +1,4 @@
-FROM debian:buster as builder
+FROM debian:bullseye as builder
 
 RUN apt-get update -y && apt-get -y install git gcc g++ make libcurl4-openssl-dev \
     && git clone https://github.com/cppla/ServerStatus.git
