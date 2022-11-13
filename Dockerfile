@@ -1,11 +1,23 @@
-FROM alpine:3.13
+FROM debian:buster as builder
 
-RUN apk add --update --no-cache python3 coreutils iproute2 procps
-RUN mkdir -p /ServerStatus/clients
+RUN apt-get update -y && apt-get -y install git gcc g++ make libcurl4-openssl-dev \
+    && git clone https://github.com/cppla/ServerStatus.git
 
-COPY ./client-linux.py /ServerStatus/clients/client-linux.py
-COPY ./client-psutil.py /ServerStatus/clients/client-psutil.py
+WORKDIR /ServerStatus/server
 
-WORKDIR /ServerStatus/clients
+RUN make
+RUN pwd && ls -la
 
-CMD python3 -u /ServerStatus/clients/client-linux.py
+FROM nginx:latest
+
+RUN mkdir -p /ServerStatus/server/
+
+COPY --from=builder /ServerStatus/server /ServerStatus/server
+COPY --from=builder /ServerStatus/web /usr/share/nginx/html/
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+EXPOSE 80 35601
+
+CMD nohup sh -c '/etc/init.d/nginx start && /ServerStatus/server/sergate --config=/ServerStatus/server/config.json --web-dir=/usr/share/nginx/html'
