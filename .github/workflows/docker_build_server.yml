@@ -1,9 +1,9 @@
-name: docker build client
+name: docker build server
 
 on:
   push:
     branches:
-      - 'client'
+      - 'server'
     paths-ignore:
       - '.github/workflows/**'
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: client
+          ref: server
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -35,4 +35,4 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/386,linux/arm/v7,linux/arm/v6
-          tags: dtcokr/serverstatus:client
+          tags: dtcokr/serverstatus:server
