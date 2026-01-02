@@ -287,14 +287,13 @@ void CMain::OnNewClient(int ClientNetID, int ClientID)
 			strftime(standardTime, sizeof(standardTime), "%Y-%m-%d %H:%M:%S",localtime(&currentStamp));
 
 			char encodeBuffer[2048] = { 0 };
-			sprintf(encodeBuffer, "【恢复告警】 %s \n\n【恢复时间】 %s  \n\n【用户名】 %s \n\n【节点名】 %s \n\n【虚拟化】 %s \n\n【主机名】 %s \n\n【位  置】 %s",
-					Watchdog(lastWD)->m_aName,
-					standardTime,
-					Client(ClientID)->m_aUsername,
-					Client(ClientID)->m_aName,
-					Client(ClientID)->m_aType,
-					Client(ClientID)->m_aHost,
-					Client(ClientID)->m_aLocation);
+			    sprintf(encodeBuffer, "【恢复告警】 online warning \n\n【恢复时间】 %s  \n\n【用户名】 %s \n\n【节点名】 %s \n\n【虚拟化】 %s \n\n【主机名】 %s \n\n【位  置】 %s",
+				    standardTime,
+				    Client(ClientID)->m_aUsername,
+				    Client(ClientID)->m_aName,
+				    Client(ClientID)->m_aType,
+				    Client(ClientID)->m_aHost,
+				    Client(ClientID)->m_aLocation);
 			char *encodeUrl = curl_easy_escape(curl, encodeBuffer, strlen(encodeBuffer));
 
 			char urlBuffer[2048] = { 0 };
