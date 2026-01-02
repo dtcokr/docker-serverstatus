@@ -712,9 +712,11 @@ void CMain::JSONUpdateThread(void *pUser)
 		// append ssl certs data
 		str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"sslcerts\": [\n");
 		pBuf += strlen(pBuf);
+		int sslCertCount = 0;
 		for(int si = 0; si < NET_MAX_CLIENTS; si++)
 		{
 			if(!m_pJSONUpdateThreadData->pMain->SSLCert(si) || !strcmp(m_pJSONUpdateThreadData->pMain->SSLCert(si)->m_aName, "NULL")) break;
+			sslCertCount++;
 			int64_t expire_ts = m_pJSONUpdateThreadData->pMain->SSLCert(si)->m_aExpireTS;
 			int expire_days = 0;
 			if(expire_ts>0){
@@ -724,7 +726,13 @@ void CMain::JSONUpdateThread(void *pUser)
 			str_format(pBuf, sizeof(aFileBuf) - (pBuf - aFileBuf), "{ \"name\": \"%s\", \"domain\": \"%s\", \"port\": %d, \"expire_ts\": %lld, \"expire_days\": %d, \"mismatch\": %s },\n", m_pJSONUpdateThreadData->pMain->SSLCert(si)->m_aName, m_pJSONUpdateThreadData->pMain->SSLCert(si)->m_aDomain, m_pJSONUpdateThreadData->pMain->SSLCert(si)->m_aPort, (long long)expire_ts, expire_days, m_pJSONUpdateThreadData->pMain->SSLCert(si)->m_aHostnameMismatch?"true":"false");
 			pBuf += strlen(pBuf);
 		}
-		if(pBuf - aFileBuf >= 2) str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
+		// Close sslcerts array: if sslCertCount > 0, replace last ",\n" with "\n]", else replace "[\n" with "[]"
+		if(sslCertCount > 0 && pBuf - aFileBuf >= 2) {
+			str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
+		} else if(sslCertCount == 0) {
+			pBuf -= 2;  // back up to before "[\n"
+			str_format(pBuf, sizeof(aFileBuf) - (pBuf - aFileBuf), "]\n],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
+		}
 		if(m_pJSONUpdateThreadData->m_ReloadRequired) m_pJSONUpdateThreadData->m_ReloadRequired--;
 		pBuf += strlen(pBuf);
 
