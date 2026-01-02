@@ -654,6 +654,7 @@ void CMain::JSONUpdateThread(void *pUser)
 
 		str_format(pBuf, sizeof(aFileBuf), "{\n\"servers\": [\n");
 		pBuf += strlen(pBuf);
+		int serverCount = 0;
 
 		for(int i = 0; i < NET_MAX_CLIENTS; i++)
 		{
@@ -697,6 +698,7 @@ void CMain::JSONUpdateThread(void *pUser)
 					pClients[i].m_Stats.m_IORead, pClients[i].m_Stats.m_IOWrite,
 					pClients[i].m_Stats.m_aCustom,
 					pClients[i].m_Stats.m_aOS[0] ? pClients[i].m_Stats.m_aOS : "");
+				serverCount++;
 				pBuf += strlen(pBuf);
 			}
 			else
@@ -706,12 +708,19 @@ void CMain::JSONUpdateThread(void *pUser)
 				str_format(pBuf, sizeof(aFileBuf) - (pBuf - aFileBuf), "{ \"name\": \"%s\", \"type\": \"%s\", \"host\": \"%s\", \"location\": \"%s\", \"online4\": false, \"online6\": false, \"last_network_in\": %" PRId64 ", \"last_network_out\": %" PRId64 ", \"os\": \"%s\" },\n",
 					pClients[i].m_aName, pClients[i].m_aType, pClients[i].m_aHost, pClients[i].m_aLocation, pClients[i].m_LastNetworkIN, pClients[i].m_LastNetworkOUT,
 					pClients[i].m_Stats.m_aOS[0] ? pClients[i].m_Stats.m_aOS : "");
-				pBuf += strlen(pBuf);
+					serverCount++;
+					pBuf += strlen(pBuf);
 			}
 		}
 		// append ssl certs data
-		str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"sslcerts\": [\n");
-		pBuf += strlen(pBuf);
+		if(serverCount > 0) {
+			str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"sslcerts\": [\n");
+			pBuf += strlen(pBuf);
+		} else {
+			// no servers: replace the header's "[\n" with "[],\n\"sslcerts\": [\n"
+			str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "[],\n\"sslcerts\": [\n");
+			pBuf += strlen(pBuf);
+		}
 		int sslCertCount = 0;
 		for(int si = 0; si < NET_MAX_CLIENTS; si++)
 		{
@@ -730,8 +739,7 @@ void CMain::JSONUpdateThread(void *pUser)
 		if(sslCertCount > 0 && pBuf - aFileBuf >= 2) {
 			str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
 		} else if(sslCertCount == 0) {
-			pBuf -= 2;  // back up to before "[\n"
-			str_format(pBuf, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"sslcerts\": [],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
+			str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "[],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
 		}
 		if(m_pJSONUpdateThreadData->m_ReloadRequired) m_pJSONUpdateThreadData->m_ReloadRequired--;
 		pBuf += strlen(pBuf);
