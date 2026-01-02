@@ -43,6 +43,7 @@ class CMain
 		int64_t m_TimeConnected;
 		int64_t m_LastUpdate;
         int64_t m_AlarmLastTime;    //record last alarm time.
+        int m_LastOfflineWatchdogID; // -1: none, otherwise watchdog ID that triggered offline alert
 
 		struct CStats
 		{

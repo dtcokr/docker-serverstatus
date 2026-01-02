@@ -271,6 +271,55 @@ void CMain::OnNewClient(int ClientNetID, int ClientID)
 	else if(Client(ClientID)->m_ClientNetType == NETTYPE_IPV6)
 		Client(ClientID)->m_Stats.m_Online6 = true;
 
+	// 如果此前对该客户端发出了离线告警（记录在 m_LastOfflineWatchdogID），则发送恢复上线告警
+	int lastWD = Client(ClientID)->m_LastOfflineWatchdogID;
+	if(lastWD >= 0 && lastWD < NET_MAX_CLIENTS)
+	{
+		// send recovery notification using same callback URL
+		time_t currentStamp = (long long)time(/*ago*/0);
+		CURL *curl;
+		CURLcode res;
+		curl_global_init(CURL_GLOBAL_ALL);
+
+		curl = curl_easy_init();
+		if(curl) {
+			char standardTime[32]= { 0 };
+			strftime(standardTime, sizeof(standardTime), "%Y-%m-%d %H:%M:%S",localtime(&currentStamp));
+
+			char encodeBuffer[2048] = { 0 };
+			sprintf(encodeBuffer, "【恢复告警】 %s \n\n【恢复时间】 %s  \n\n【用户名】 %s \n\n【节点名】 %s \n\n【虚拟化】 %s \n\n【主机名】 %s \n\n【位  置】 %s",
+					Watchdog(lastWD)->m_aName,
+					standardTime,
+					Client(ClientID)->m_aUsername,
+					Client(ClientID)->m_aName,
+					Client(ClientID)->m_aType,
+					Client(ClientID)->m_aHost,
+					Client(ClientID)->m_aLocation);
+			char *encodeUrl = curl_easy_escape(curl, encodeBuffer, strlen(encodeBuffer));
+
+			char urlBuffer[2048] = { 0 };
+			sprintf(urlBuffer, "%s%s", Watchdog(lastWD)->m_aCallback, encodeUrl);
+
+			curl_easy_setopt(curl, CURLOPT_POST, 1L);
+			curl_easy_setopt(curl, CURLOPT_URL, urlBuffer);
+			curl_easy_setopt(curl, CURLOPT_POSTFIELDS,"signature=ServerStatus");
+			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
+			curl_easy_setopt(curl, CURLOPT_TIMEOUT, 6L);
+			res = curl_easy_perform(curl);
+			if(res != CURLE_OK)
+				fprintf(stderr, "watchdog recovery failed: %s\n", curl_easy_strerror(res));
+			if(encodeUrl)
+				curl_free(encodeUrl);
+			curl_easy_cleanup(curl);
+		}
+		curl_global_cleanup();
+
+		// reset marker
+		Client(ClientID)->m_LastOfflineWatchdogID = -1;
+	}
+
     // Send monitor to client
     // support by cpp.la
     int ID = 0;
@@ -789,6 +838,8 @@ void CMain::offlineAlarmThread(void *pUser)
                         curl_easy_cleanup(curl);
                     }
                     curl_global_cleanup();
+					// 记录是哪条 watchdog 触发了离线告警，便于客户端重新上线时发送恢复通知
+					pClients[ClientID].m_LastOfflineWatchdogID = ID;
                 }
                 else
                     printf("客户端下线但未超过阈值，No alarm if the threshold is not exceeded\n");
@@ -840,8 +891,10 @@ int CMain::ReadConfig()
 		m_Server.Network()->Drop(Client(i)->m_ClientNetID, "Server reloading...");
 	}
 	mem_zero(m_aClients, sizeof(m_aClients));
-	for(int i = 0; i < NET_MAX_CLIENTS; i++)
+	for(int i = 0; i < NET_MAX_CLIENTS; i++){
 		m_aClients[i].m_ClientNetID = -1;
+		m_aClients[i].m_LastOfflineWatchdogID = -1; // initialize to -1 (none)
+	}
 
 	// extract data
 	int ID = 0;
