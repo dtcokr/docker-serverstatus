@@ -731,7 +731,7 @@ void CMain::JSONUpdateThread(void *pUser)
 			str_format(pBuf - 2, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
 		} else if(sslCertCount == 0) {
 			pBuf -= 2;  // back up to before "[\n"
-			str_format(pBuf, sizeof(aFileBuf) - (pBuf - aFileBuf), "]\n],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
+			str_format(pBuf, sizeof(aFileBuf) - (pBuf - aFileBuf), "\n],\n\"sslcerts\": [],\n\"updated\": \"%lld\"%s\n}", (long long)time(/*ago*/0), m_pJSONUpdateThreadData->m_ReloadRequired?",\n\"reload\": true":"");
 		}
 		if(m_pJSONUpdateThreadData->m_ReloadRequired) m_pJSONUpdateThreadData->m_ReloadRequired--;
 		pBuf += strlen(pBuf);
