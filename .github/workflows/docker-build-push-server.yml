@@ -2,7 +2,6 @@ name: Build and push multi-arch Docker image (server tag)
 
 on:
   push:
-    tags: ['server']
   workflow_dispatch:
 
 jobs:
@@ -33,7 +32,7 @@ jobs:
           platforms: linux/arm/v7,linux/arm64,linux/amd64
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/serverstatus:server
+            ${{ secrets.DOCKERHUB_USERNAME }}/serverstatus:server_test
             ${{ secrets.DOCKERHUB_USERNAME }}/serverstatus:${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
