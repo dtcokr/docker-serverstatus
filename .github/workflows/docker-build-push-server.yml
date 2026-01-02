@@ -2,9 +2,6 @@ name: Build and push multi-arch Docker image (server tag)
 
 on:
   push:
-    paths-ignore:
-      - '.github/workflows/**'
-  workflow_dispatch:
 
 jobs:
   build-and-push:
